@@ -1,0 +1,10 @@
+env = "local"
+database:
+  host = 
+  port =
+  username =
+  password =
+
+grpc:
+  address =
+  port =
