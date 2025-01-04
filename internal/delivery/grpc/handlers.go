@@ -1,10 +1,10 @@
-package grpc
+package delivery_grpc
 
 import (
 	"context"
 
-	"github.com/rmarsu/auth_service/internal/config"
 	auth_service "github.com/rmarsu/auth_service/internal/proto"
+	"github.com/rmarsu/auth_service/internal/service"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -13,22 +13,18 @@ const (
 	NoValue = 0
 )
 
-type AuthMicroservice struct {
-	cfg  *config.Config
-	auth Auth
+type AuthHandlers struct {
+	auth_service.UnimplementedAuthServiceServer
+	services service.Services
 }
 
-func NewAuthMicroservice(cfg *config.Config) *AuthMicroservice {
-	return &AuthMicroservice{cfg: cfg}
+func NewAuthHandlers(services service.Services) *AuthHandlers {
+	return &AuthHandlers{
+		services: services,
+	}
 }
 
-type Auth interface {
-	RegisterUser(ctx context.Context, username, password string) (int64, error)
-	Login(ctx context.Context, username, password string, appId int64) (string, error)
-	IsAdmin(ctx context.Context, username string) (bool, error)
-}
-
-func (a *AuthMicroservice) Register(ctx context.Context,
+func (a *AuthHandlers) Register(ctx context.Context,
 	in *auth_service.RegisterRequest) (*auth_service.RegisterResponse, error) {
 
 	if in.Username == "" {
@@ -38,14 +34,14 @@ func (a *AuthMicroservice) Register(ctx context.Context,
 		return nil, status.Error(codes.InvalidArgument, ErrPasswordIsRequired)
 	}
 
-	id, err := a.auth.RegisterUser(ctx, in.GetUsername(), in.GetPassword())
+	id, err := a.services.Auth.RegisterUser(ctx, in.GetUsername(), in.GetPassword())
 	if err != nil {
 		return nil, err
 	}
 	return &auth_service.RegisterResponse{Id: id}, nil
 }
 
-func (a *AuthMicroservice) Login(ctx context.Context,
+func (a *AuthHandlers) Login(ctx context.Context,
 	in *auth_service.LoginRequest) (*auth_service.LoginResponse, error) {
 
 	if in.Username == "" {
@@ -57,20 +53,20 @@ func (a *AuthMicroservice) Login(ctx context.Context,
 	if in.AppId == NoValue {
 		return nil, status.Error(codes.InvalidArgument, ErrAppIdIsRequired)
 	}
-	token, err := a.auth.Login(ctx, in.GetUsername(), in.GetPassword(), in.GetAppId())
+	token, err := a.services.Auth.Login(ctx, in.GetUsername(), in.GetPassword(), in.GetAppId())
 	if err != nil {
 		return nil, err
 	}
 	return &auth_service.LoginResponse{Token: token}, nil
 }
 
-func (a *AuthMicroservice) IsAdmin(ctx context.Context,
+func (a *AuthHandlers) IsAdmin(ctx context.Context,
 	in *auth_service.IsAdminRequest) (*auth_service.IsAdminResponse, error) {
 
 	if in.Token == "" {
 		return nil, status.Error(codes.InvalidArgument, ErrUsernameIsRequired)
 	}
-	isAdmin, err := a.auth.IsAdmin(ctx, in.GetToken())
+	isAdmin, err := a.services.Auth.IsAdmin(ctx, in.GetToken())
 	if err != nil {
 		return nil, err
 	}

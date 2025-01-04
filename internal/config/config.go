@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -20,8 +21,10 @@ type Database struct {
 }
 
 type GRPCConfig struct {
-	Address string `yaml:"address"`
-	Port    int    `yaml:"port"`
+	Port              int `yaml:"port"`
+	MaxConnectionAge  time.Duration `yaml:"max_connection_age"`
+	MaxConnectionIdle time.Duration `yaml:"max_connection_idle"`
+	Timeout           time.Duration `yaml:"timeout"`
 }
 
 func MustLoad(cfgPath string) *Config {
@@ -30,7 +33,7 @@ func MustLoad(cfgPath string) *Config {
 		panic(err)
 	}
 	var config *Config
-	if err := yaml.Unmarshal(data, config); err != nil {
+	if err := yaml.Unmarshal(data, &config); err != nil {
 		panic(err)
 	}
 	return config
