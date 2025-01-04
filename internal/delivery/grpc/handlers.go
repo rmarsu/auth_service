@@ -39,7 +39,7 @@ func (a *AuthHandlers) Register(ctx context.Context,
 
 	id, err := a.services.Auth.RegisterUser(ctx, in.GetEmail(), in.GetUsername(), in.GetPassword())
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, domain.ErrSomethingWentWrong)
 	}
 	return &auth_service.RegisterResponse{Id: id}, nil
 }
@@ -58,7 +58,7 @@ func (a *AuthHandlers) Login(ctx context.Context,
 	}
 	token, err := a.services.Auth.Login(ctx, in.GetEmail(), in.GetPassword(), in.GetAppId())
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, domain.ErrSomethingWentWrong)
 	}
 	return &auth_service.LoginResponse{Token: token}, nil
 }
@@ -71,7 +71,7 @@ func (a *AuthHandlers) IsAdmin(ctx context.Context,
 	}
 	isAdmin, err := a.services.Auth.IsAdmin(ctx, in.GetId())
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, domain.ErrSomethingWentWrong)
 	}
 	return &auth_service.IsAdminResponse{IsAdmin: isAdmin}, nil
 }

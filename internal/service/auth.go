@@ -62,8 +62,11 @@ func (s *AuthService) Login(ctx context.Context, email, password string, appId i
 
 	app, err := s.repo.Auth.GetAppById(ctx, appId)
 	if err != nil {
-		logger.Warn("Failed to get app by id")
-		return "", errors.New(domain.ErrAppNotFound)
+		if errors.Is(err, repository.ErrAppNotFound) {
+			logger.Warnf("Failed to get app by id %d", appId)
+			return "", errors.New(domain.ErrAppNotFound)
+		}
+		logger.Errorf("Failed to get app by id %d", appId)
 	}
 
 	logger.Info("User logged in successfully")
@@ -78,16 +81,16 @@ func (s *AuthService) Login(ctx context.Context, email, password string, appId i
 
 func (s *AuthService) IsAdmin(ctx context.Context, userId int64) (bool, error) {
 	logger.Infof("Checking user with ID %d for admin privileges", userId)
-	isAdmin , err :=  s.repo.Auth.IsAdmin(ctx, userId)
-	if err!= nil {
+	isAdmin, err := s.repo.Auth.IsAdmin(ctx, userId)
+	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
 			logger.Warnf("User %d not found", userId)
-               return false, errors.New(domain.ErrUserNotFound)
+			return false, errors.New(domain.ErrUserNotFound)
 		}
-          logger.Error("Failed to check admin privileges")
-          return false, err
-     }
-	logger.Infof("User with ID %d admin = %b", userId, isAdmin)
+		logger.Error("Failed to check admin privileges")
+		return false, err
+	}
+	logger.Infof("User with ID %d admin = %t", userId, isAdmin)
 	return isAdmin, nil
 }
 
