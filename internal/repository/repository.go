@@ -1,9 +1,13 @@
 package repository
 
-import ()
+import "github.com/jackc/pgx/v5/pgxpool"
 
-type Repository struct {}
+type Repository struct {
+	db *pgxpool.Pool
+}
 
-func NewRepository() *Repository {
-     return &Repository{}
+func NewRepository(db *pgxpool.Pool) *Repository {
+	return &Repository{
+		db: db,
+	}
 }
