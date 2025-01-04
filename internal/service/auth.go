@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/rmarsu/auth_service/internal/domain"
 	"github.com/rmarsu/auth_service/internal/repository"
 	"github.com/rmarsu/auth_service/pkg/hash"
 	"github.com/rmarsu/auth_service/pkg/jwt"
@@ -33,14 +32,24 @@ func NewAuthService(repo *repository.Repository,
 func (s *AuthService) RegisterUser(ctx context.Context, email, username, password string) (int64, error) {
 	logger.Info("Attemping to register user...")
 	if !checkPasswordValid(password) {
-		return 0, errors.New(domain.ErrPasswordIsNotValid)
+		return 0, ErrPasswordIsNotValid
 	}
 	hashedPassword, err := s.hasher.Hash(password)
 	if err != nil {
-		logger.Error("Failed to hash password")
-		return 0, err
+		logger.Errorf("Failed to hash password. Reason: %v", err)
+		return 0, ErrSomethingWentWrong
 	}
-	return s.repo.Auth.CreateUser(ctx, email, username, hashedPassword)
+	id, err := s.repo.Auth.CreateUser(ctx, email, username, hashedPassword)
+	if err != nil {
+		if err == repository.ErrUserAlreadyExists {
+			logger.Warnf("User %s already exists", email)
+			return 0, ErrUserAlreadyExists
+		}
+		logger.Errorf("Failed to register user. Reason: %v", err)
+		return 0, ErrSomethingWentWrong
+	}
+	logger.Infof("User %s registered successfully", email)
+	return id, err
 
 }
 
@@ -50,31 +59,31 @@ func (s *AuthService) Login(ctx context.Context, email, password string, appId i
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
 			logger.Warnf("User %s not found", email)
-			return "", errors.New(domain.ErrUserNotFound)
+			return "", ErrUserNotFound
 		}
 		logger.Error("Failed to get user by email")
-		return "", errors.New(domain.ErrSomethingWentWrong)
+		return "", ErrSomethingWentWrong
 	}
 	if !s.hasher.Verify(user.Password, password) {
 		logger.Warnf("Invalid password for user %s", email)
-		return "", errors.New(domain.ErrWrongPassword)
+		return "", ErrWrongPassword
 	}
 
 	app, err := s.repo.Auth.GetAppById(ctx, appId)
 	if err != nil {
 		if errors.Is(err, repository.ErrAppNotFound) {
 			logger.Warnf("Failed to get app by id %d", appId)
-			return "", errors.New(domain.ErrAppNotFound)
+			return "", ErrAppNotFound
 		}
 		logger.Errorf("Failed to get app by id %d", appId)
 	}
 
 	logger.Info("User logged in successfully")
 
-	token, err := s.tokMgr.NewJWT(user.Id, app.Id, s.ttl)
+	token, err := s.tokMgr.NewJWT(app.Id, user.Id, s.ttl)
 	if err != nil {
-		logger.Error("Failed to generate JWT")
-		return "", err
+		logger.Errorf("Failed to generate JWT. Reason: %v", err)
+		return "", ErrSomethingWentWrong
 	}
 	return token, nil
 }
@@ -85,10 +94,10 @@ func (s *AuthService) IsAdmin(ctx context.Context, userId int64) (bool, error) {
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
 			logger.Warnf("User %d not found", userId)
-			return false, errors.New(domain.ErrUserNotFound)
+			return false, ErrUserNotFound
 		}
 		logger.Error("Failed to check admin privileges")
-		return false, err
+		return false, ErrSomethingWentWrong
 	}
 	logger.Infof("User with ID %d admin = %t", userId, isAdmin)
 	return isAdmin, nil

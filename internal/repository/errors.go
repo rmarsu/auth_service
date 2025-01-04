@@ -4,6 +4,7 @@ import "fmt"
 
 var (
 	ErrUserNotFound   = fmt.Errorf("user not found")
+	ErrUserAlreadyExists = fmt.Errorf("user already exists")
 	ErrAppNotFound    = fmt.Errorf("app not found")
 	ErrTokenNotFound  = fmt.Errorf("token not found")
 	ErrEmailTaken     = fmt.Errorf("email already taken")
