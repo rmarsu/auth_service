@@ -1,4 +1,5 @@
 env: "local"
+
 database:
   host: "postgres"
   port: 5432
@@ -10,3 +11,10 @@ grpc:
   max_connection_idle: 5s
   timeout: 15s
   max_connection_age: 5s
+
+jwt:
+  salt : "my_salt"
+  ttl : 3600s
+
+hasher:
+  salt : "my_salt"

@@ -14,8 +14,8 @@ import (
 	"github.com/rmarsu/auth_service/internal/service"
 	database "github.com/rmarsu/auth_service/pkg/db/postgres"
 	"github.com/rmarsu/auth_service/pkg/hash"
+	"github.com/rmarsu/auth_service/pkg/jwt"
 	"github.com/rmarsu/auth_service/pkg/logger"
-	"github.com/sanity-io/litter"
 )
 
 const (
@@ -37,19 +37,21 @@ func Run() {
 		logger.Errorf("Failed to connect to the database: %v", err)
 		return
 	}
-	litter.Dump(db)
-	db.Exec(ctx, `
-	     CREATE TABLE IF NOT EXISTS users (
-               id SERIAL PRIMARY KEY,
-               username VARCHAR(255) UNIQUE NOT NULL,
-               password_hash VARCHAR(64) NOT NULL,,,
-          );
-	`)
+	defer db.Close()
+
+	manager , err := jwt.NewManager(cfg.Jwt.Salt) 
+	if err!= nil {
+          logger.Errorf("Failed to create JWT manager: %v", err)
+          return
+     }
+	
 	repo := repository.NewRepository(db)
 
 	services := service.NewServices(&service.Deps{
 		Repo:   repo,
-		Hasher: hash.NewSHA256Hasher(os.Getenv("salt")),
+		Hasher: hash.NewSHA256Hasher(cfg.Hasher.Salt),
+		TokenManager: manager,
+		TTL:    cfg.Jwt.TTL,
 	})
 
 	handlers := delivery_grpc.NewAuthHandlers(services)

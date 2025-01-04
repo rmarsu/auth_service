@@ -11,6 +11,17 @@ type Config struct {
 	Enviroment string     `yaml:"env" env-default:"local"`
 	Database   Database   `yaml:"database"`
 	GRPC       GRPCConfig `yaml:"grpc"`
+	Jwt        JWTConfig  `yaml:"jwt"`
+	Hasher HasherConfig `yaml:"hasher"`
+}
+
+type HasherConfig struct {
+     Salt string `yaml:"salt"`
+}
+
+type JWTConfig struct {
+	Salt string        `yaml:"salt"`
+	TTL  time.Duration `yaml:"ttl"`
 }
 
 type Database struct {
@@ -21,7 +32,7 @@ type Database struct {
 }
 
 type GRPCConfig struct {
-	Port              int `yaml:"port"`
+	Port              int           `yaml:"port"`
 	MaxConnectionAge  time.Duration `yaml:"max_connection_age"`
 	MaxConnectionIdle time.Duration `yaml:"max_connection_idle"`
 	Timeout           time.Duration `yaml:"timeout"`

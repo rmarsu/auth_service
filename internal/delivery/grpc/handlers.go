@@ -3,6 +3,7 @@ package delivery_grpc
 import (
 	"context"
 
+	"github.com/rmarsu/auth_service/internal/domain"
 	auth_service "github.com/rmarsu/auth_service/internal/proto"
 	"github.com/rmarsu/auth_service/internal/service"
 	"google.golang.org/grpc/codes"
@@ -26,15 +27,17 @@ func NewAuthHandlers(services service.Services) *AuthHandlers {
 
 func (a *AuthHandlers) Register(ctx context.Context,
 	in *auth_service.RegisterRequest) (*auth_service.RegisterResponse, error) {
-
+	if in.Email == "" {
+		return nil, status.Error(codes.InvalidArgument, domain.ErrEmailIsRequired)
+	}
 	if in.Username == "" {
-		return nil, status.Error(codes.InvalidArgument, ErrUsernameIsRequired)
+		return nil, status.Error(codes.InvalidArgument, domain.ErrUsernameIsRequired)
 	}
 	if in.Password == "" {
-		return nil, status.Error(codes.InvalidArgument, ErrPasswordIsRequired)
+		return nil, status.Error(codes.InvalidArgument, domain.ErrPasswordIsRequired)
 	}
 
-	id, err := a.services.Auth.RegisterUser(ctx, in.GetUsername(), in.GetPassword())
+	id, err := a.services.Auth.RegisterUser(ctx, in.GetEmail(), in.GetUsername(), in.GetPassword())
 	if err != nil {
 		return nil, err
 	}
@@ -44,16 +47,16 @@ func (a *AuthHandlers) Register(ctx context.Context,
 func (a *AuthHandlers) Login(ctx context.Context,
 	in *auth_service.LoginRequest) (*auth_service.LoginResponse, error) {
 
-	if in.Username == "" {
-		return nil, status.Error(codes.InvalidArgument, ErrUsernameIsRequired)
+	if in.Email == "" {
+		return nil, status.Error(codes.InvalidArgument, domain.ErrEmailIsRequired)
 	}
 	if in.Password == "" {
-		return nil, status.Error(codes.InvalidArgument, ErrPasswordIsRequired)
+		return nil, status.Error(codes.InvalidArgument, domain.ErrPasswordIsRequired)
 	}
 	if in.AppId == NoValue {
-		return nil, status.Error(codes.InvalidArgument, ErrAppIdIsRequired)
+		return nil, status.Error(codes.InvalidArgument, domain.ErrAppIdIsRequired)
 	}
-	token, err := a.services.Auth.Login(ctx, in.GetUsername(), in.GetPassword(), in.GetAppId())
+	token, err := a.services.Auth.Login(ctx, in.GetEmail(), in.GetPassword(), in.GetAppId())
 	if err != nil {
 		return nil, err
 	}
@@ -63,10 +66,10 @@ func (a *AuthHandlers) Login(ctx context.Context,
 func (a *AuthHandlers) IsAdmin(ctx context.Context,
 	in *auth_service.IsAdminRequest) (*auth_service.IsAdminResponse, error) {
 
-	if in.Token == "" {
-		return nil, status.Error(codes.InvalidArgument, ErrUsernameIsRequired)
+	if in.Id == NoValue {
+		return nil, status.Error(codes.InvalidArgument, domain.ErrIdIsRequired)
 	}
-	isAdmin, err := a.services.Auth.IsAdmin(ctx, in.GetToken())
+	isAdmin, err := a.services.Auth.IsAdmin(ctx, in.GetId())
 	if err != nil {
 		return nil, err
 	}

@@ -1,8 +1,8 @@
 package hash
 
 import (
+	"crypto/hmac"
 	"crypto/sha256"
-	"fmt"
 )
 
 type PasswordHasher interface {
@@ -17,12 +17,21 @@ func NewSHA256Hasher(salt string) *SHA256Hasher {
 	return &SHA256Hasher{salt: salt}
 }
 
-func (h *SHA256Hasher) Hash(password string) (string, error) {
+func (h *SHA256Hasher) Hash(password string) ([]byte, error) {
 	hash := sha256.New()
 
 	if _, err := hash.Write([]byte(password)); err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return fmt.Sprintf("%x", hash.Sum([]byte(h.salt))), nil
+	return hash.Sum([]byte(h.salt)), nil
+}
+
+func (h *SHA256Hasher) Verify(hashedPassword []byte, password string) bool {
+	expectedHash, err := h.Hash(password)
+	if err != nil {
+		return false
+	}
+
+	return hmac.Equal(hashedPassword, expectedHash)
 }
