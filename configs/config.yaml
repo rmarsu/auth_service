@@ -7,7 +7,6 @@ database:
   password: "qwerty"
 
 grpc:
-  port: 8080
   max_connection_idle: 5s
   timeout: 15s
   max_connection_age: 5s

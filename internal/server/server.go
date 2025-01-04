@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"net"
+	"os"
 
 	"github.com/rmarsu/auth_service/internal/config"
 	auth_service "github.com/rmarsu/auth_service/internal/proto"
@@ -24,7 +25,7 @@ func New(cfg *config.Config, handlers ...auth_service.AuthServiceServer) *Server
 }
 
 func (s *Server) Serve() {
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.GRPC.Port))
+	l, err := net.Listen("tcp", fmt.Sprintf(":%s", os.Getenv("GRPC_PORT")))
 	if err != nil {
 		logger.Errorf("failed to listen: %v", err)
 	}

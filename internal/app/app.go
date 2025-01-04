@@ -62,7 +62,7 @@ func Run() {
 		srv.Serve()
 	}()
 
-	logger.Infof("GRPC Server started on port %d", cfg.GRPC.Port)
+	logger.Infof("GRPC Server started on port %s", os.Getenv("GRPC_PORT"))
 
 	// Gracefully shutdown.
 	quit := make(chan os.Signal, 1)
