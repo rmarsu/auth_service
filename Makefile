@@ -1,6 +1,6 @@
 migrate:
 	goose up
 build:
-	docker-compose build app
+	docker-compose build auth-service
 run:
-	docker-compose up app
+	docker-compose up auth-service
